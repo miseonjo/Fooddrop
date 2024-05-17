@@ -1,0 +1,107 @@
+!pip install pygame
+pip install --upgrade pip
+import pygame
+import random
+
+pygame.init()
+
+# 색상 정의
+WHITE = (255, 255, 255)
+BLACK = (0, 0, 0)
+
+# 화면 크기 설정
+size = (400, 600)
+screen = pygame.display.set_mode(size)
+
+# Pygame Clock 객체 생성
+clock = pygame.time.Clock()
+
+# 이미지 로드 및 크기 조정
+airplane = pygame.image.load('images/plane.png')
+airplane = pygame.transform.scale(airplane, (60, 45))
+fruit = pygame.image.load('images/fruit.png')
+fruit = pygame.transform.scale(fruit, (30, 30))
+ddong = pygame.image.load('images/ddong.png')
+ddong = pygame.transform.scale(ddong, (30, 30))
+
+# 폰트 설정
+font = pygame.font.SysFont(None, 36)
+
+# 장애물 클래스 정의
+class Obstacle:
+    def __init__(self, x, y, image, speed):  # 장애물의 초기 위치, 이미지, 속도를 설정하는 생성자
+        self.x = x
+        self.y = y
+        self.image = image
+        self.speed = speed
+    
+    def move(self):  # 장애물을 아래로 이동시키는 메서드
+        self.y += self.speed
+    
+    def draw(self):  # 장애물을 화면에 그리는 메서드
+        screen.blit(self.image, (self.x, self.y))
+    
+    def reset_pos(self):  # 장애물이 화면을 벗어나면 위치를 재설정하는 메서드
+        self.x = random.randint(0, size[0] - self.image.get_width())
+        self.y = -self.image.get_height()
+        self.speed = random.randint(3, 6)
+
+# 게임 실행 함수 정의
+def runGame():
+    x = 20
+    y = size[1] - 45
+    speed = 5
+    score = 0
+
+    # 장애물 리스트 생성
+    obstacles = []  # 장애물 객체를 저장하는 리스트. 랜덤하게 음식 또는 폭탄을 선택하여 장애물을 생성
+    for i in range(5):
+        obstacle_type = random.choice([fruit, ddong])
+        obstacle = Obstacle(random.randint(0, size[0] - 30), -30, obstacle_type, random.randint(3, 6))
+        obstacles.append(obstacle)
+
+    done = False
+  
+    while not done:
+        clock.tick(30)  # 초당 30 프레임으로 설정
+        screen.fill(WHITE)  # 화면을 흰색으로 지우
+        
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                done = True
+
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_LEFT]:
+            x -= speed
+        if keys[pygame.K_RIGHT]:
+            x += speed
+
+        if x < 0:
+            x = 0
+        elif x > size[0] - 60:
+            x = size[0] - 60
+
+        # 장애물 이동 및 충돌 처리
+        for obstacle in obstacles:
+            obstacle.move()
+            if obstacle.y > size[1]:
+                obstacle.reset_pos()
+            
+            if x < obstacle.x < x + 60 and y < obstacle.y < y + 45:
+                if obstacle.image == food:
+                    score += 10
+                elif obstacle.image == bomb:
+                    score -= 10
+                obstacle.reset_pos()
+
+            obstacle.draw()
+        
+        screen.blit(airplane, (x, y))
+
+        score_text = font.render(f'Score: {score}', True, BLACK)
+        screen.blit(score_text, (10, 10))
+        
+        pygame.display.update()
+
+runGame()
+pygame.quit()
